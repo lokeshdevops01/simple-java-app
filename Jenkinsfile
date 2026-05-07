@@ -5,9 +5,10 @@ pipeline {
 		maven 'maven3.9.15'
     }
     stages{
-    	stage('Build Package')
+    	stage('Build Package'){
 		    steps {
 	    	    sh 'mvn clean package'
 	    	}
 		}
     }
+}
