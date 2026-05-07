@@ -10,5 +10,10 @@ pipeline {
 	    	    sh 'mvn clean package'
 	    	}
 		}
+		stage('Deploy Package'){
+			steps{
+				sh 'mvn deploy'
+			}
+		}
     }
 }
