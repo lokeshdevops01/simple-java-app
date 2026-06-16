@@ -9,7 +9,7 @@ pipeline {
     stages{
     	stage('Build Package'){
 		    steps {
-	    	    mvnBuild()
+	    	    mavenBuild()
 	    	}
 		}
 		stage('Deploy Package'){
