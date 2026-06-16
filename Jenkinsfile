@@ -3,7 +3,7 @@ pipeline {
 	
     tools {
     	jdk 'java21'
-		maven 'maven3.9.15'
+		maven 'maven3.9.16'
     }
     stages{
     	stage('Build Package'){
@@ -13,7 +13,15 @@ pipeline {
 		}
 		stage('Deploy Package'){
 			steps{
-				sh 'mvn deploy'
+				withCredentials ([
+					usernamePassword(
+						credentilasId: 'nexus-creds',
+						usernameVariable: 'NEXUS_USER',
+						passwordVariable: 'NEXUS_PASS'
+						)
+					]) {
+					sh 'mvn deploy -s /var/lib/jenkins/.m2/settings.xml'
+				}
 			}
 		}
     }
