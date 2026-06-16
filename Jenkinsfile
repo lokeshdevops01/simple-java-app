@@ -15,7 +15,7 @@ pipeline {
 			steps{
 				withCredentials ([
 					usernamePassword(
-						credentilasId: 'nexus-creds',
+						credentilsId: 'nexus-creds',
 						usernameVariable: 'NEXUS_USER',
 						passwordVariable: 'NEXUS_PASS'
 						)
