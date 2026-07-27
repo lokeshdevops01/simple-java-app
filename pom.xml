@@ -1,40 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-    http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         https://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
 
+    <!-- Project Information -->
     <groupId>com.example</groupId>
     <artifactId>simple-java-app</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
+    <!-- Java Configuration -->
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <!-- Dependencies -->
     <dependencies>
 
         <!-- JUnit for testing -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.12</version>
+            <version>4.13.2</version>
             <scope>test</scope>
         </dependency>
 
     </dependencies>
 
+    <!-- Build Configuration -->
     <build>
         <plugins>
 
-            <!-- Plugin for creating executable JAR -->
+            <!-- Create JAR file -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.1.0</version>
+                <version>3.4.2</version>
 
                 <configuration>
                     <archive>
@@ -43,7 +50,6 @@
                         </manifest>
                     </archive>
                 </configuration>
-
             </plugin>
 
         </plugins>
@@ -55,12 +61,14 @@
         <!-- Release Repository -->
         <repository>
             <id>nexus-releases</id>
+            <name>Nexus Releases</name>
             <url>http://34.239.186.45:8081/repository/maven-releases/</url>
         </repository>
 
         <!-- Snapshot Repository -->
         <snapshotRepository>
             <id>nexus-snapshots</id>
+            <name>Nexus Snapshots</name>
             <url>http://34.239.186.45:8081/repository/maven-snapshots/</url>
         </snapshotRepository>
 
