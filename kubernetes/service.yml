@@ -4,15 +4,16 @@ metadata:
   name: simple-java-app-service
   namespace: demo-ns
   annotations:
-    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    service.beta.kubernetes.io/aws-load-balancer-subnets: subnet-0a3b96de6f9a006ab,subnet-0438f274b72e41a09
 
 spec:
   type: LoadBalancer
+
   selector:
     app: simple-java-app
 
   ports:
-    - protocol: TCP
-      port: 80
+    - port: 80
       targetPort: 8080
-
+      protocol: TCP
