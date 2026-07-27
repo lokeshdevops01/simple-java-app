@@ -5,7 +5,8 @@ metadata:
   namespace: demo-ns
   annotations:
     service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
-    service.beta.kubernetes.io/aws-load-balancer-subnets: subnet-0a3b96de6f9a006ab,subnet-0438f274b72e41a09
+    service.beta.kubernetes.io/aws-load-balancer-subnets: subnet-09672585ed6105145,subnet-02031ce81f58f8c8b,subnet-0a3b96de6f9a006ab,subnet-0438f274b72e41a09
+    service.beta.kubernetes.io/aws-load-balancer-attributes: load_balancing.cross_zone.enabled=true
 
 spec:
   type: LoadBalancer
