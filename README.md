@@ -1,113 +1,66 @@
-# Simple Java App — Jenkins CI/CD → Nexus → Docker Hub → Amazon EKS
+# Simple Java App — Jenkins CI/CD to Amazon EKS
 
 ## 1. Project Overview
 
-This project demonstrates a complete CI/CD pipeline for deploying a Java application to Amazon EKS.
+This project demonstrates an end-to-end CI/CD pipeline for deploying a Java application to Amazon EKS.
 
-The source code is stored in GitHub. Jenkins automatically builds the application, publishes the JAR file to Nexus, creates a Docker image, pushes the image to Docker Hub, and deploys the application to Amazon EKS.
+The application source code is stored in GitHub. Jenkins builds the application using Maven, publishes the JAR file to Nexus, builds a Docker image, pushes the image to Docker Hub, and deploys the application to Amazon EKS.
 
-The application is finally exposed to the internet using an AWS Network Load Balancer (NLB).
+Kubernetes runs two application Pods and uses HPA for automatic scaling.
+
+The application is exposed externally using an AWS Network Load Balancer (NLB).
 
 ### Complete Flow
 
 ```text
-Developer
-    |
-    | git push
-    v
 GitHub
-    |
-    | Webhook / Jenkins Trigger
-    v
+   ↓
 Jenkins
-    |
-    +--> Maven Build
-    |       |
-    |       +--> JAR
-    |              |
-    |              v
-    |           Nexus Repository
-    |
-    +--> Docker Build
-    |       |
-    |       v
-    |    Docker Image
-    |       |
-    |       v
-    |    Docker Hub
-    |
-    +--> AWS EKS Deployment
-            |
-            v
-       Kubernetes
-            |
-            +--> Deployment
-            |       |
-            |       v
-            |    Java Pods
-            |     :8080
-            |
-            +--> Service
-            |     :80
-            |
-            +--> HPA
-            |
-            v
-    AWS Network Load Balancer
-            |
-            v
-         Internet
-            |
-            v
-         Browser
+   ↓
+Maven Build
+   ↓
+JAR → Nexus
+   ↓
+Docker Build
+   ↓
+Docker Image → Docker Hub
+   ↓
+Amazon EKS
+   ↓
+Kubernetes Deployment
+   ↓
+Kubernetes Service
+   ↓
+AWS Network Load Balancer
+   ↓
+Application :8080
 ```
 
 ---
 
-# 2. Project Goals
+# 2. Technologies Used
 
-The main goals of this project are:
-
-* Store Java source code in GitHub.
-* Automatically build the Java application using Jenkins.
-* Use Maven for application packaging.
-* Store the generated JAR artifact in Nexus.
-* Build a Docker image.
-* Push the Docker image to Docker Hub.
-* Deploy the application to Amazon EKS.
-* Run multiple application replicas.
-* Automatically scale Pods using Kubernetes HPA.
-* Expose the application through an AWS Network Load Balancer.
-* Demonstrate AWS VPC public/private subnet networking.
-* Demonstrate Jenkins-to-AWS authentication using an IAM role.
-
----
-
-# 3. Technologies Used
-
-| Technology             | Purpose                                 |
-| ---------------------- | --------------------------------------- |
-| GitHub                 | Source code repository                  |
-| Jenkins                | CI/CD automation                        |
-| Jenkins Shared Library | Reusable Jenkins pipeline functions     |
-| Java                   | Application runtime/development         |
-| Maven                  | Build and package Java application      |
-| Nexus Repository       | Maven artifact repository               |
-| Docker                 | Containerization                        |
-| Docker Hub             | Docker image registry                   |
-| Kubernetes             | Container orchestration                 |
-| Amazon EKS             | Managed Kubernetes cluster              |
-| AWS NLB                | External application access             |
-| Kubernetes HPA         | Automatic Pod scaling                   |
-| Metrics Server         | Kubernetes CPU/memory metrics           |
-| ConfigMap              | Non-sensitive application configuration |
-| Secret                 | Sensitive application configuration     |
-| AWS IAM                | AWS authentication/authorization        |
-| AWS VPC                | Network infrastructure                  |
+| Technology             | Purpose                            |
+| ---------------------- | ---------------------------------- |
+| GitHub                 | Source code repository             |
+| Jenkins                | CI/CD automation                   |
+| Jenkins Shared Library | Reusable pipeline functions        |
+| Java                   | Application                        |
+| Maven                  | Build and package Java application |
+| Nexus                  | Maven artifact repository          |
+| Docker                 | Containerization                   |
+| Docker Hub             | Docker image repository            |
+| Kubernetes             | Container orchestration            |
+| Amazon EKS             | Managed Kubernetes cluster         |
+| AWS NLB                | External access to application     |
+| HPA                    | Automatic Pod scaling              |
+| Metrics Server         | CPU and memory metrics             |
+| AWS IAM                | AWS authentication and permissions |
+| AWS VPC                | Network infrastructure             |
 
 ---
 
-# 4. GitHub Repository
+# 3. GitHub Repository
 
 Repository:
 
@@ -129,7 +82,7 @@ Local project directory:
 
 ---
 
-# 5. Project Structure
+# 4. Project Structure
 
 ```text
 simple-java-app/
@@ -145,7 +98,6 @@ simple-java-app/
 │
 ├── src/
 │   └── main/
-│       └── ...
 │
 ├── Dockerfile
 ├── Jenkinsfile
@@ -154,67 +106,21 @@ simple-java-app/
 └── .gitignore
 ```
 
-## Purpose of Each Important File
+## Important Files
 
 ### `pom.xml`
 
-Maven project configuration.
+Maven configuration for the Java application.
 
-It defines:
-
-* Java project information
-* Group ID
-* Artifact ID
-* Version
-* Dependencies
-* Build configuration
-* Maven plugins
-
-The application version is:
-
-```text
-1.0-SNAPSHOT
-```
-
----
+It contains the project information, dependencies, Java configuration, and build configuration.
 
 ### `Jenkinsfile`
 
 Defines the Jenkins CI/CD pipeline.
 
-The pipeline performs:
-
-```text
-Build
-   ↓
-Nexus
-   ↓
-Docker Build
-   ↓
-Docker Hub
-   ↓
-EKS Deployment
-```
-
----
-
 ### `Dockerfile`
 
-Defines how the Java application is packaged into a container image.
-
-Current runtime:
-
-```text
-eclipse-temurin:17-jdk-alpine
-```
-
-Application port:
-
-```text
-8080
-```
-
----
+Defines how the Java application is packaged into a Docker image.
 
 ### `kubernetes/namespace.yaml`
 
@@ -224,100 +130,37 @@ Creates the Kubernetes namespace:
 demo-ns
 ```
 
----
-
-### `kubernetes/configmap.yml`
-
-Contains non-sensitive application configuration.
-
-Example configuration:
-
-```text
-APP_ENV=production
-APP_DEBUG=false
-```
-
----
-
-### `kubernetes/secret.yml`
-
-Contains sensitive application configuration.
-
-Secrets should not contain real credentials in GitHub.
-
-For a production system, use a proper secret-management solution such as AWS Secrets Manager with an appropriate Kubernetes integration.
-
----
-
 ### `kubernetes/deployment.yml`
 
 Creates and manages the Java application Pods.
 
-Current configuration:
-
-```text
-Deployment:
-simple-java-app
-
-Replicas:
-2
-
-Container Port:
-8080
-```
-
----
-
 ### `kubernetes/service.yml`
 
-Creates a Kubernetes `LoadBalancer` Service.
-
-It exposes:
-
-```text
-Port:
-80
-
-Target Port:
-8080
-```
-
-This Service causes Amazon EKS to provision an AWS Network Load Balancer.
-
----
+Creates the Kubernetes `LoadBalancer` Service and provisions the AWS Network Load Balancer.
 
 ### `kubernetes/hpa.yml`
 
-Creates the Horizontal Pod Autoscaler.
+Configures automatic Pod scaling.
 
-Current configuration:
+### `kubernetes/configmap.yml`
 
-```text
-Minimum replicas:
-2
+Stores non-sensitive application configuration.
 
-Maximum replicas:
-5
+### `kubernetes/secret.yml`
 
-CPU target:
-50%
-```
+Stores sensitive Kubernetes configuration.
 
----
+Real passwords, tokens, and credentials should never be committed to GitHub.
 
 ### `kubernetes/ingress.yml`
 
-Contains an AWS ALB Ingress configuration.
-
-The project currently uses the Kubernetes `LoadBalancer` Service/NLB as the verified external access path.
-
-The Ingress manifest is retained as part of the project for demonstrating an alternative AWS load-balancing approach.
+Contains an Ingress configuration for the project. The verified external access path for this project is the `LoadBalancer` Service and AWS NLB.
 
 ---
 
-# 6. Jenkins Configuration
+# 5. Jenkins Configuration
 
-Jenkins is running on an AWS EC2 instance.
+Jenkins runs on an AWS EC2 instance.
 
 Jenkins EC2:
 
@@ -325,27 +168,27 @@ Jenkins EC2:
 ip-172-31-16-184
 ```
 
-The Jenkins EC2 instance uses the IAM role:
+IAM Role:
 
 ```text
 Jenkins-role
 ```
 
-The IAM role has permission to access the EKS cluster.
+Jenkins has AWS permissions to access the EKS cluster.
 
-EKS access is configured for the Jenkins role using:
+EKS access includes:
 
 ```text
 AmazonEKSClusterAdminPolicy
 ```
 
-This allows Jenkins to execute Kubernetes deployment commands against the EKS cluster.
+> For a production environment, a more restricted least-privilege policy should be used.
 
 ---
 
-# 7. Jenkins Tools
+# 6. Jenkins Tools
 
-The Jenkins global tools used by this project are:
+The Jenkins environment uses:
 
 ```text
 JDK:
@@ -360,7 +203,109 @@ my-shared-lib
 
 ---
 
-# 8. Application and Docker Image
+# 7. CI/CD Pipeline
+
+The pipeline follows this process:
+
+```text
+1. GitHub
+      ↓
+2. Jenkins Checkout
+      ↓
+3. Maven Build
+      ↓
+4. Deploy JAR to Nexus
+      ↓
+5. Build Docker Image
+      ↓
+6. Push Docker Image to Docker Hub
+      ↓
+7. Deploy to Amazon EKS
+```
+
+---
+
+# 8. Maven Build
+
+Maven builds the Java application and generates the JAR file.
+
+The generated JAR is created under:
+
+```text
+target/
+```
+
+The JAR is then deployed to Nexus.
+
+Flow:
+
+```text
+Java Source
+    ↓
+Maven
+    ↓
+JAR
+    ↓
+Nexus
+```
+
+---
+
+# 9. Nexus Repository
+
+Nexus is used as the Maven artifact repository.
+
+Jenkins deploys the generated JAR to Nexus.
+
+Purpose:
+
+```text
+Store and manage Maven application artifacts
+```
+
+The Maven deployment uses:
+
+```text
+/var/lib/jenkins/.m2/settings.xml
+```
+
+---
+
+# 10. Docker
+
+After Maven builds the Java application, Jenkins creates a Docker image.
+
+Docker image:
+
+```text
+lokeshdevops01/java-eks-app:latest
+```
+
+The Dockerfile uses:
+
+```text
+eclipse-temurin:17-jdk-alpine
+```
+
+Application port:
+
+```text
+8080
+```
+
+Flow:
+
+```text
+Java JAR
+   ↓
+Dockerfile
+   ↓
+Docker Image
+```
+
+---
+
+# 11. Docker Hub
 
 Docker Hub repository:
 
@@ -374,138 +319,33 @@ Image:
 lokeshdevops01/java-eks-app:latest
 ```
 
-Application port:
+Jenkins pushes the image to Docker Hub.
 
-```text
-8080
-```
-
-The Java application starts successfully and listens on port `8080`.
-
-Application response:
-
-```text
-Welcome to My Simple Java Application!
-```
+EKS uses this image to run the application Pods.
 
 ---
 
-# 9. Jenkins CI/CD Pipeline
+# 12. Amazon EKS
 
-## Stage 1 — Build Java Application
-
-Jenkins uses Maven to build the application.
-
-Conceptually:
-
-```text
-Source Code
-    |
-    v
-Maven
-    |
-    v
-JAR file
-```
-
-The JAR is generated under:
-
-```text
-target/
-```
-
----
-
-# 10. Stage 2 — Deploy JAR to Nexus
-
-The generated JAR is deployed to Nexus.
-
-Jenkins uses the Maven settings file:
-
-```text
-/var/lib/jenkins/.m2/settings.xml
-```
-
-The deployment command is:
-
-```bash
-mvn deploy -s /var/lib/jenkins/.m2/settings.xml
-```
-
-Nexus acts as the Maven artifact repository.
-
-This means:
-
-```text
-Jenkins
-   |
-   | Maven deploy
-   v
-Nexus
-   |
-   v
-simple-java-app-1.0-SNAPSHOT.jar
-```
-
----
-
-# 11. Stage 3 — Build Docker Image
-
-Jenkins builds the Docker image from the Dockerfile.
-
-Image:
-
-```text
-lokeshdevops01/java-eks-app:latest
-```
-
-Conceptually:
-
-```text
-Java JAR
-   |
-   v
-Dockerfile
-   |
-   v
-Docker Image
-```
-
----
-
-# 12. Stage 4 — Push Image to Docker Hub
-
-Jenkins pushes the Docker image to Docker Hub.
-
-```text
-Jenkins
-   |
-   v
-Docker Hub
-   |
-   v
-lokeshdevops01/java-eks-app:latest
-```
-
-The EKS deployment then uses this image.
-
----
-
-# 13. Stage 5 — Deploy to Amazon EKS
-
-EKS cluster:
+Cluster:
 
 ```text
 dev-cluster
 ```
 
-AWS Region:
+Region:
 
 ```text
 us-east-1
 ```
 
-Before using `kubectl`, Jenkins configures access to the EKS cluster:
+Namespace:
+
+```text
+demo-ns
+```
+
+Jenkins configures EKS access using:
 
 ```bash
 aws eks update-kubeconfig \
@@ -513,15 +353,11 @@ aws eks update-kubeconfig \
   --region us-east-1
 ```
 
-The Kubernetes namespace used by the application is:
-
-```text
-demo-ns
-```
+The Jenkins IAM role is authorized to access the cluster.
 
 ---
 
-# 14. Kubernetes Deployment
+# 13. Kubernetes Deployment
 
 Deployment:
 
@@ -529,54 +365,58 @@ Deployment:
 simple-java-app
 ```
 
-Current desired replicas:
+Replicas:
 
 ```text
 2
 ```
 
-Application container port:
+Application port:
 
 ```text
 8080
 ```
 
-Resource configuration:
+Container resource limits:
 
 ```text
-CPU Request:
-100m
-
-Memory Request:
-128Mi
-
-CPU Limit:
+CPU limit:
 500m
 
-Memory Limit:
+Memory limit:
 512Mi
 ```
 
-The Deployment ensures that the requested number of Pods are running.
+The Deployment maintains the desired number of application Pods.
 
-Example:
+Current application Pods run successfully:
 
 ```text
-Deployment
-    |
-    +---- Pod 1
-    |
-    +---- Pod 2
+Pod 1 → 10.0.3.57:8080
+Pod 2 → 10.0.2.179:8080
+```
+
+Both Pods were verified as:
+
+```text
+1/1 Running
+0 restarts
 ```
 
 ---
 
-# 15. Kubernetes Service
+# 14. Kubernetes Service
 
 Service:
 
 ```text
 simple-java-app-service
+```
+
+Namespace:
+
+```text
+demo-ns
 ```
 
 Type:
@@ -585,7 +425,7 @@ Type:
 LoadBalancer
 ```
 
-Configuration:
+Ports:
 
 ```text
 Service Port:
@@ -598,67 +438,88 @@ Target Port:
 Traffic flow:
 
 ```text
-NLB :80
-    |
-    v
+AWS NLB :80
+      ↓
 Kubernetes Service :80
-    |
-    v
+      ↓
 Java Pod :8080
 ```
 
 ---
 
-# 16. AWS Network Load Balancer
+# 15. AWS Network Load Balancer
 
 The Kubernetes `LoadBalancer` Service creates an AWS Network Load Balancer.
 
+Configuration:
+
+```text
+Type:
+Network Load Balancer
+
 Scheme:
-
-```text
 internet-facing
-```
-
-Protocol:
-
-```text
-TCP
-```
 
 Listener:
-
-```text
 TCP :80
-```
 
-Target type:
-
-```text
+Target Type:
 IP
-```
 
-Target port:
-
-```text
+Target Port:
 8080
 ```
 
-The NLB forwards traffic to the Java application Pods.
+The NLB forwards traffic directly to the Kubernetes Pod IPs.
+
+Current targets:
+
+```text
+10.0.3.57:8080
+10.0.2.179:8080
+```
+
+Final target health:
+
+```text
+10.0.3.57:8080 → healthy
+10.0.2.179:8080 → healthy
+```
 
 ---
 
-# 17. Final NLB Configuration
+# 16. NLB Service Annotations
 
-The final working NLB is enabled in all four Availability Zones:
+The final `service.yml` contains:
 
-```text
-us-east-1a
-us-east-1b
-us-east-1c
-us-east-1d
+```yaml
+annotations:
+  service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+
+  service.beta.kubernetes.io/aws-load-balancer-subnets: subnet-09672585ed6105145,subnet-02031ce81f58f8c8b,subnet-0a3b96de6f9a006ab,subnet-0438f274b72e41a09
+
+  service.beta.kubernetes.io/aws-load-balancer-attributes: load_balancing.cross_zone.enabled=true
 ```
 
-The Kubernetes Service explicitly specifies these four subnets:
+## Annotation 1 — Internet Facing
+
+```yaml
+service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+```
+
+This tells EKS to create an NLB intended for external/internet traffic.
+
+---
+
+## Annotation 2 — NLB Subnets
+
+```yaml
+service.beta.kubernetes.io/aws-load-balancer-subnets: ...
+```
+
+This explicitly tells AWS which subnets to use for the NLB.
+
+The final configuration uses:
 
 ```text
 us-east-1a
@@ -674,17 +535,104 @@ us-east-1d
 subnet-0438f274b72e41a09
 ```
 
-Cross-zone load balancing is enabled:
+---
 
-```text
-load_balancing.cross_zone.enabled=true
+## Annotation 3 — Cross-Zone Load Balancing
+
+```yaml
+service.beta.kubernetes.io/aws-load-balancer-attributes: load_balancing.cross_zone.enabled=true
 ```
 
-This configuration is important because the application Pods are running in `us-east-1c` and `us-east-1d`.
+This enables cross-zone load balancing.
+
+It allows the NLB to distribute traffic across healthy targets in different Availability Zones.
 
 ---
 
-# 18. AWS VPC Architecture
+# 17. Important NLB Problem and Fix
+
+This was the main AWS networking problem encountered during the project.
+
+Initially, the NLB was enabled only in:
+
+```text
+us-east-1a
+us-east-1b
+```
+
+But the application Pods were running in:
+
+```text
+us-east-1c
+us-east-1d
+```
+
+The target group showed:
+
+```text
+Target.NotInUse
+```
+
+### Initial Configuration
+
+```text
+NLB
+├── us-east-1a
+└── us-east-1b
+
+Pods
+├── us-east-1c
+└── us-east-1d
+```
+
+The NLB did not have nodes in the Availability Zones containing the IP targets.
+
+### Final Configuration
+
+The NLB was configured across all four Availability Zones:
+
+```text
+NLB
+├── us-east-1a
+├── us-east-1b
+├── us-east-1c
+└── us-east-1d
+
+Pods
+├── us-east-1c
+└── us-east-1d
+```
+
+After the change, both targets became healthy:
+
+```text
+10.0.3.57:8080 → healthy
+10.0.2.179:8080 → healthy
+```
+
+### Important Lesson
+
+When troubleshooting an EKS Service backed by an AWS NLB:
+
+```text
+Check Pod AZs
+      ↓
+Check NLB AZs
+      ↓
+Check NLB subnets
+      ↓
+Check target health
+```
+
+If an NLB IP target is in an Availability Zone that is not enabled for the NLB, the target can show:
+
+```text
+Target.NotInUse
+```
+
+---
+
+# 18. AWS VPC
 
 VPC:
 
@@ -721,10 +669,7 @@ CIDR:
 Route:
 
 ```text
-0.0.0.0/0
-    |
-    v
-Internet Gateway
+0.0.0.0/0 → Internet Gateway
 ```
 
 ### us-east-1b
@@ -740,15 +685,12 @@ CIDR:
 Route:
 
 ```text
-0.0.0.0/0
-    |
-    v
-Internet Gateway
+0.0.0.0/0 → Internet Gateway
 ```
 
 ---
 
-## Private EKS Subnets
+## EKS Application Subnets
 
 ### us-east-1c
 
@@ -770,7 +712,7 @@ CIDR:
 10.0.3.0/24
 ```
 
-These subnets use the NAT Gateway for outbound internet access.
+These subnets use the NAT Gateway for outbound internet connectivity.
 
 NAT Gateway:
 
@@ -781,85 +723,14 @@ nat-164b8336ff33ffb35
 Route:
 
 ```text
-0.0.0.0/0
-    |
-    v
-NAT Gateway
+0.0.0.0/0 → NAT Gateway
 ```
 
 ---
 
-# 19. Why the NLB Networking Issue Happened
+# 19. Kubernetes HPA
 
-This was an important troubleshooting issue in the project.
-
-Initially:
-
-```text
-NLB:
-us-east-1a
-us-east-1b
-```
-
-Application Pods:
-
-```text
-us-east-1c
-us-east-1d
-```
-
-The NLB target group showed:
-
-```text
-Target.NotInUse
-```
-
-because the NLB was not enabled in the Availability Zones where the IP targets were located.
-
-The initial configuration therefore looked like:
-
-```text
-NLB
-  |
-  +--> 1a
-  |
-  +--> 1b
-
-Pods
-  |
-  +--> 1c
-  |
-  +--> 1d
-```
-
-The final solution was to configure the NLB across all four Availability Zones:
-
-```text
-NLB
-  |
-  +--> 1a
-  +--> 1b
-  +--> 1c
-  +--> 1d
-```
-
-After the change, the targets became healthy:
-
-```text
-10.0.3.57:8080
-healthy
-
-10.0.2.179:8080
-healthy
-```
-
-This restored external application access.
-
----
-
-# 20. Kubernetes HPA
-
-Horizontal Pod Autoscaler:
+HPA name:
 
 ```text
 simple-java-app-hpa
@@ -878,29 +749,25 @@ CPU target:
 50%
 ```
 
-The HPA uses the Kubernetes Metrics Server.
+The HPA uses CPU metrics from Metrics Server.
 
-Example:
-
-```bash
-kubectl top pods -n demo-ns
-```
-
-Current low-load behavior:
+Flow:
 
 ```text
-CPU:
-approximately 1% / 50%
+Low CPU
+   ↓
+2 Pods
 
-Replicas:
-2
+High CPU
+   ↓
+HPA increases replicas
+   ↓
+Maximum 5 Pods
 ```
-
-If CPU utilization increases and remains above the configured target, Kubernetes can increase the number of Pods up to 5.
 
 ---
 
-# 21. Metrics Server
+# 20. Metrics Server
 
 Metrics Server is installed and working.
 
@@ -913,36 +780,84 @@ kubectl top pods -n demo-ns
 Example:
 
 ```text
-NAME                              CPU    MEMORY
-simple-java-app-xxxxx             1m     ...
-simple-java-app-yyyyy             1m     ...
+CPU:
+approximately 1%
+
+Target:
+50%
 ```
 
-Metrics Server is required for CPU-based HPA scaling.
+Metrics Server provides the metrics required by the HPA.
 
 ---
 
-# 22. Useful Kubernetes Commands
+# 21. Application
 
-## Configure EKS access
+Application port:
 
-```bash
-aws eks update-kubeconfig \
-  --name dev-cluster \
-  --region us-east-1
+```text
+8080
 ```
 
-## Check cluster nodes
+Application startup log confirmed:
 
-```bash
-kubectl get nodes
+```text
+Application started on port 8080
 ```
 
-## Check all application resources
+Application response:
+
+```text
+Welcome to My Simple Java Application!
+```
+
+---
+
+# 22. Final Application Traffic Flow
+
+```text
+Internet
+    |
+    v
+AWS Internet-Facing NLB
+TCP :80
+    |
+    v
+Kubernetes LoadBalancer Service
+Port :80
+    |
+    v
+Java Application Pods
+Port :8080
+    |
+    +---- Pod 1
+    |
+    +---- Pod 2
+```
+
+---
+
+# 23. NLB DNS
+
+The NLB DNS name generated during this project was:
+
+```text
+k8s-demons-simpleja-e20719481b-a691ca863744c4cc.elb.us-east-1.amazonaws.com
+```
+
+The DNS name can change if the Kubernetes Service/NLB is recreated.
+
+Therefore, do not hard-code this DNS name into application code.
+
+Get the current NLB DNS using:
 
 ```bash
-kubectl get all -n demo-ns
+kubectl get svc simple-java-app-service -n demo-ns
 ```
+
+---
+
+# 24. Verification
 
 ## Check Pods
 
@@ -950,10 +865,12 @@ kubectl get all -n demo-ns
 kubectl get pods -n demo-ns -o wide
 ```
 
-## Check Deployment
+Expected:
 
-```bash
-kubectl get deployment -n demo-ns
+```text
+2 Pods
+1/1 Running
+0 restarts
 ```
 
 ## Check Service
@@ -968,37 +885,31 @@ kubectl get svc -n demo-ns
 kubectl get hpa -n demo-ns
 ```
 
-## Check CPU and memory
+## Check Metrics
 
 ```bash
 kubectl top pods -n demo-ns
 ```
 
-## Check application logs
+## Check Application Logs
 
 ```bash
 kubectl logs -n demo-ns deployment/simple-java-app
 ```
 
-## Follow logs
-
-```bash
-kubectl logs -f -n demo-ns deployment/simple-java-app
-```
-
-## Check endpoints
+## Check Endpoints
 
 ```bash
 kubectl get endpoints -n demo-ns
 ```
 
-For newer Kubernetes versions, EndpointSlices can also be checked:
+## Check EndpointSlices
 
 ```bash
 kubectl get endpointslice -n demo-ns
 ```
 
-## Check rollout
+## Check Deployment Rollout
 
 ```bash
 kubectl rollout status \
@@ -1008,9 +919,15 @@ kubectl rollout status \
 
 ---
 
-# 23. Useful AWS Commands
+# 25. AWS Verification Commands
 
-## Check EKS cluster
+## Check AWS Identity
+
+```bash
+aws sts get-caller-identity
+```
+
+## Check EKS Cluster
 
 ```bash
 aws eks describe-cluster \
@@ -1018,25 +935,26 @@ aws eks describe-cluster \
   --region us-east-1
 ```
 
-## Check AWS identity used by Jenkins
-
-```bash
-aws sts get-caller-identity
-```
-
-## List load balancers
+## Check NLB
 
 ```bash
 aws elbv2 describe-load-balancers \
   --region us-east-1
 ```
 
-## Check NLB target health
+## Check Target Health
 
 ```bash
 aws elbv2 describe-target-health \
   --region us-east-1 \
   --target-group-arn <TARGET_GROUP_ARN>
+```
+
+Expected:
+
+```text
+10.0.3.57:8080 → healthy
+10.0.2.179:8080 → healthy
 ```
 
 ## Check VPC
@@ -1046,14 +964,14 @@ aws ec2 describe-vpcs \
   --region us-east-1
 ```
 
-## Check subnets
+## Check Subnets
 
 ```bash
 aws ec2 describe-subnets \
   --region us-east-1
 ```
 
-## Check route tables
+## Check Route Tables
 
 ```bash
 aws ec2 describe-route-tables \
@@ -1062,248 +980,58 @@ aws ec2 describe-route-tables \
 
 ---
 
-# 24. Application Verification
-
-After deployment, first verify the Pods:
-
-```bash
-kubectl get pods -n demo-ns
-```
-
-Expected:
-
-```text
-2 Pods
-1/1 Running
-0 restarts
-```
-
-Then verify the Service:
-
-```bash
-kubectl get svc -n demo-ns
-```
-
-The Service should have an AWS NLB hostname under `EXTERNAL-IP`.
-
-Then verify the NLB target health from AWS.
-
-Expected:
-
-```text
-10.0.2.179:8080    healthy
-10.0.3.57:8080     healthy
-```
-
-Finally, open the NLB hostname in a browser:
-
-```text
-http://<NLB-DNS-NAME>
-```
-
-Expected application response:
-
-```text
-Welcome to My Simple Java Application!
-```
-
-A successful HTTP response of:
-
-```text
-HTTP/1.1 200 OK
-```
-
-confirms that the complete traffic path is working.
-
----
-
-# 25. End-to-End Traffic Flow
-
-The final production-like traffic flow is:
-
-```text
-                        INTERNET
-                            |
-                            |
-                            v
-                AWS Network Load Balancer
-                     Internet-Facing
-                         TCP :80
-                            |
-                            v
-              Kubernetes LoadBalancer Service
-                       Port :80
-                            |
-                            v
-                  Java Application Pods
-                       Port :8080
-                       /          \
-                      /            \
-                     v              v
-              Pod 1 :8080     Pod 2 :8080
-              10.0.2.179      10.0.3.57
-```
-
-The application Pods are located in:
-
-```text
-us-east-1c
-us-east-1d
-```
-
-The NLB is enabled in:
-
-```text
-us-east-1a
-us-east-1b
-us-east-1c
-us-east-1d
-```
-
----
-
-# 26. CI/CD Flow in Detail
-
-When code is pushed to GitHub:
-
-```text
-1. Developer pushes code
-        |
-        v
-2. GitHub
-        |
-        v
-3. Jenkins starts pipeline
-        |
-        v
-4. Maven builds Java application
-        |
-        v
-5. JAR is deployed to Nexus
-        |
-        v
-6. Docker image is built
-        |
-        v
-7. Image is pushed to Docker Hub
-        |
-        v
-8. Jenkins authenticates with EKS
-        |
-        v
-9. Kubernetes manifests are applied
-        |
-        v
-10. Deployment creates/updates Pods
-        |
-        v
-11. Service exposes application through NLB
-        |
-        v
-12. HPA monitors CPU
-        |
-        v
-13. Application is accessible from the internet
-```
-
----
-
-# 27. Troubleshooting Guide
+# 26. Troubleshooting
 
 ## Pods are not running
 
-Check:
-
 ```bash
 kubectl get pods -n demo-ns
-```
 
-Then:
-
-```bash
 kubectl describe pod <POD_NAME> -n demo-ns
-```
 
-And:
-
-```bash
 kubectl logs <POD_NAME> -n demo-ns
 ```
 
 ---
 
-## Application is running but Service has no external IP
-
-Check:
+## Service has no external DNS
 
 ```bash
 kubectl get svc -n demo-ns
+
+kubectl describe svc \
+  simple-java-app-service \
+  -n demo-ns
 ```
 
-Then:
-
-```bash
-kubectl describe svc simple-java-app-service -n demo-ns
-```
-
-Look at the Events section for AWS load-balancer errors.
+Check the Events section for AWS load-balancer errors.
 
 ---
 
-## NLB target is `Target.NotInUse`
-
-Check the NLB Availability Zones:
-
-```bash
-aws elbv2 describe-load-balancers \
-  --region us-east-1
-```
-
-Check target health:
-
-```bash
-aws elbv2 describe-target-health \
-  --region us-east-1 \
-  --target-group-arn <TARGET_GROUP_ARN>
-```
-
-Make sure the NLB is enabled in the Availability Zones containing the application Pod IPs.
-
-In this project, the final NLB configuration uses:
-
-```text
-us-east-1a
-us-east-1b
-us-east-1c
-us-east-1d
-```
-
----
-
-## NLB targets are unhealthy
+## NLB target shows `Target.NotInUse`
 
 Check:
+
+```text
+1. Pod Availability Zones
+2. NLB Availability Zones
+3. NLB subnet configuration
+4. Target group target type
+5. Target health
+```
+
+Commands:
 
 ```bash
 kubectl get pods -n demo-ns -o wide
 ```
 
-Then verify that the application is actually listening on:
-
-```text
-8080
-```
-
-Check logs:
+and:
 
 ```bash
-kubectl logs -n demo-ns deployment/simple-java-app
-```
-
-Check Service endpoints:
-
-```bash
-kubectl get endpoints -n demo-ns
+aws elbv2 describe-target-health \
+  --region us-east-1 \
+  --target-group-arn <TARGET_GROUP_ARN>
 ```
 
 ---
@@ -1314,120 +1042,50 @@ Check:
 
 ```bash
 kubectl get hpa -n demo-ns
-```
 
-Then:
-
-```bash
 kubectl top pods -n demo-ns
-```
-
-If metrics are unavailable, check Metrics Server:
-
-```bash
-kubectl get pods -n kube-system | grep metrics
 ```
 
 ---
 
 ## Jenkins cannot access EKS
 
-Check AWS identity:
+Check:
 
 ```bash
 aws sts get-caller-identity
-```
 
-Check kubeconfig:
-
-```bash
 aws eks update-kubeconfig \
   --name dev-cluster \
   --region us-east-1
-```
 
-Then:
-
-```bash
 kubectl get nodes
 ```
 
-The Jenkins EC2 IAM role must have the required EKS permissions/access.
+Verify the Jenkins IAM role and EKS access configuration.
 
 ---
 
-# 28. Important Security Notes
+# 27. Security Notes
 
-This project is primarily a learning/portfolio project.
+This project is primarily a learning and portfolio project.
 
-For a production implementation, improve the following:
+For production use:
 
-### Docker image tags
-
-Instead of always using:
-
-```text
-latest
-```
-
-use immutable tags such as:
-
-```text
-1.0.0
-BUILD_NUMBER
-GIT_COMMIT
-```
-
-This makes rollback easier.
-
-### Kubernetes Secrets
-
-Do not commit real passwords, API keys, tokens, or credentials to GitHub.
-
-Use:
-
-* AWS Secrets Manager
-* External Secrets
-* Sealed Secrets
-* Another approved secret-management solution
-
-### IAM permissions
-
-Avoid giving Jenkins more AWS permissions than necessary.
-
-Use least-privilege IAM policies.
-
-### HTTPS
-
-The current NLB listener is:
-
-```text
-TCP :80
-```
-
-For production, use HTTPS/TLS and a suitable certificate.
-
-### Image scanning
-
-Add container image vulnerability scanning before deploying images to production.
-
-### Kubernetes security
-
-Consider:
-
-* Pod Security Standards
-* Network Policies
-* Resource limits
-* Read-only root filesystem where possible
-* Non-root containers
-* Security contexts
-* RBAC with least privilege
+* Use least-privilege IAM permissions.
+* Do not store real credentials in GitHub.
+* Use AWS Secrets Manager or another proper secret-management solution.
+* Use immutable Docker image tags instead of only `latest`.
+* Use HTTPS/TLS instead of plain HTTP.
+* Add container vulnerability scanning.
+* Use Kubernetes RBAC with least privilege.
+* Use appropriate Kubernetes security contexts and network policies.
 
 ---
 
-# 29. What I Learned From This Project
+# 28. What This Project Demonstrates
 
-This project helped demonstrate practical understanding of:
+This project demonstrates practical experience with:
 
 * Git and GitHub
 * Jenkins CI/CD
@@ -1443,81 +1101,127 @@ This project helped demonstrate practical understanding of:
 * Kubernetes HPA
 * Metrics Server
 * ConfigMaps
-* Secrets
+* Kubernetes Secrets
 * AWS IAM
 * AWS VPC
-* Public and private subnets
+* Public and application subnets
 * Internet Gateway
 * NAT Gateway
 * AWS Network Load Balancer
-* Kubernetes-to-AWS integration
-* Troubleshooting AWS networking
+* Availability Zones
+* AWS networking troubleshooting
 * End-to-end application deployment
+
+---
+
+# 29. Final Architecture
+
+```text
+                         GitHub
+                            |
+                            v
+                         Jenkins
+                            |
+              +-------------+-------------+
+              |                           |
+              v                           v
+         Maven Build                  Docker Build
+              |                           |
+              v                           v
+            Nexus                    Docker Hub
+              |                           |
+              +-------------+-------------+
+                            |
+                            v
+                       Amazon EKS
+                            |
+                       demo-ns
+                            |
+                       Deployment
+                            |
+                 +----------+----------+
+                 |                     |
+                 v                     v
+              Pod 1                 Pod 2
+             :8080                 :8080
+                 \                     /
+                  \                   /
+                   +-------+---------+
+                           |
+                           v
+                 Kubernetes Service
+                        :80
+                           |
+                           v
+                AWS Network Load Balancer
+                        :80
+                           |
+                           v
+                       Internet
+```
 
 ---
 
 # 30. Final Project Status
 
-The complete CI/CD pipeline has been successfully implemented.
+```text
+GitHub                  ✅
+Jenkins                 ✅
+Maven Build             ✅
+Nexus                   ✅
+Docker Build            ✅
+Docker Hub Push         ✅
+Amazon EKS              ✅
+Kubernetes Deployment   ✅
+Kubernetes Service      ✅
+HPA                     ✅
+Metrics Server          ✅
+AWS NLB                 ✅
+NLB Target Health       ✅
+External HTTP Test      ✅
+```
+
+The NLB was successfully tested from the Jenkins EC2 instance and returned:
+
+```text
+HTTP/1.1 200 OK
+```
+
+Application response:
+
+```text
+Welcome to My Simple Java Application!
+```
+
+---
+
+# 31. Final Result
+
+The completed CI/CD and deployment flow is:
 
 ```text
 GitHub
-   |
-   v
+   ↓
 Jenkins
-   |
-   +--> Maven Build
-   |
-   +--> Nexus
-   |
-   +--> Docker Build
-   |
-   +--> Docker Hub
-   |
-   +--> Amazon EKS
-          |
-          +--> Kubernetes Deployment
-          |
-          +--> 2 Java Pods
-          |
-          +--> HPA: 2-5 replicas
-          |
-          +--> LoadBalancer Service
-          |
-          +--> AWS NLB
-          |
-          v
-       Internet
-          |
-          v
-       Browser
-          |
-          v
-Welcome to My Simple Java Application!
+   ↓
+Maven
+   ↓
+Nexus
+   ↓
+Docker Build
+   ↓
+Docker Hub
+   ↓
+Amazon EKS
+   ↓
+Kubernetes Deployment
+   ↓
+Kubernetes Service
+   ↓
+AWS Network Load Balancer
+   ↓
+Java Application
 ```
 
-## Final Result
-
-The application successfully responds with:
-
-```text
-Welcome to My Simple Java Application!
-```
-
-The final verified path is:
-
-```text
-GitHub
-→ Jenkins
-→ Maven
-→ Nexus
-→ Docker Build
-→ Docker Hub
-→ Amazon EKS
-→ Kubernetes Service
-→ AWS Network Load Balancer
-→ Java Application
-```
-
-**Project Status: Completed Successfully**
+## Project Status: COMPLETED ✅
 
